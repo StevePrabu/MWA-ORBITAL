@@ -49,20 +49,21 @@ do
     ## make images required for this time-step at every fine channel
     ## first try make with wsclean -channels out 
     ## it if fails, image one channel at a time (slower, hence is not default!)
-    
+
     i=$((g*1))
     j=$((i+1))
 
     wsclean -quiet -name ${obsnum}-2m-${i} -size 1400 1400\
             -abs-mem 120 -interval ${i} ${j} -channels-out ${channels}\
             -weight natural -scale 5amin -use-wgridder -no-dirty ${obsnum}.ms
+
     ## check if failed??
     if [ $? -eq 0 ];
     then
-        echo "wsclean -channels out run sucessfully"
+        echo "wsclean -channels-out ran sucessfully"
     else
-        echo "wsclean -chanels out failed"
-        echo "reimaing one fine channel at time"
+        echo "wsclean -chanels-out failed"
+        echo "re-imaging one fine channel at time (slow!)"
 
         ## spawn n number of jobs parallely
         for f in `seq 0 ${updatedCHANNELS}`;
@@ -97,6 +98,7 @@ do
             wait ${pid}
         done
 
+    fi
     
     endt=`date +%s`
     runtimet=$((endt-startt))
