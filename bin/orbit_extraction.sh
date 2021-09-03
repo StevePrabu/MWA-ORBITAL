@@ -47,42 +47,57 @@ do
     startt=`date +%s`
 
     ## make images required for this time-step at every fine channel
+    ## first try make with wsclean -channels out 
+    ## it if fails, image one channel at a time (slower, hence is not default!)
+    
     i=$((g*1))
     j=$((i+1))
 
-    ## spawn n number of jobs parallely
-    for f in `seq 0 ${updatedCHANNELS}`;
-    do
-        f1=$((f*1))
-        f2=$((f1+1))
+    wsclean -quiet -name ${obsnum}-2m-${i} -size 1400 1400\
+            -abs-mem 120 -interval ${i} ${j} -channels-out ${channels}\
+            -weight natural -scale 5amin -use-wgridder -no-dirty ${obsnum}.ms
+    ## check if failed??
+    if [ $? -eq 0 ];
+    then
+        echo "wsclean -channels out run sucessfully"
+    else
+        echo "wsclean -chanels out failed"
+        echo "reimaing one fine channel at time"
 
-        while [[ $(jobs | wc -l) -ge 20 ]]
+        ## spawn n number of jobs parallely
+        for f in `seq 0 ${updatedCHANNELS}`;
         do
-            wait -n $(jobs -p)
-        done
+            f1=$((f*1))
+            f2=$((f1+1))
 
-        ## unique temporary dump folder for every channel and time-step
-        mkdir temp_${g}_${f} 
-        name=`printf %04d $f`
+            while [[ $(jobs | wc -l) -ge 20 ]]
+            do
+                wait -n $(jobs -p)
+            done
 
-        wsclean -quiet -name ${obsnum}-2m-${i}-${name} -size 1400 1400\
+            ## unique temporary dump folder for every channel and time-step
+            mkdir temp_${g}_${f} 
+            name=`printf %04d $f`
+
+            wsclean -quiet -name ${obsnum}-2m-${i}-${name} -size 1400 1400\
                         -temp-dir temp_${g}_${f} -abs-mem 5 -interval ${i} ${j}\
                         -channel-range ${f1} ${f2} -weight natural -scale 5amin\
                         -use-wgridder -no-dirty ${obsnum}.ms &
 
-    done
+        done
 
-    ## wait for all pids before continuing
-    b=0
-    for job in `jobs -p`
-    do
-        pids[${b}]=${job}
-        b=$((b+1))
-    done
-    for pid in ${pids[*]}; do
-        wait ${pid}
-    done
+        ## wait for all pids before continuing
+        b=0
+        for job in `jobs -p`
+        do
+            pids[${b}]=${job}
+            b=$((b+1))
+        done
+        for pid in ${pids[*]}; do
+            wait ${pid}
+        done
 
+    
     endt=`date +%s`
     runtimet=$((endt-startt))
     echo "the imaging run time ${runtimet}"
