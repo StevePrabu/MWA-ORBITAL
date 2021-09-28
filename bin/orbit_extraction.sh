@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --export=NONE
 #SBATCH -p workq
-#SBATCH --time=24:00:00
+#SBATCH --time=8:00:00
 #SBATCH --ntasks=20
 #SBATCH --mem=124GB
 #SBATCH --tmp=440GB
@@ -19,12 +19,16 @@ set -x
 
 obsnum=OBSNUM
 base=BASE
-norad=NORAD
 myPath=MYPATH
+
+## start monitoring resource usage
+cd /nvmetmp
+cp ${myPath}/monitor.py .
+myPython3 ./monitor.py --name orbit_extraction_usage --sleepTime 1 &
+monitorPID=$!
 
 ## copy files to nvme disk
 cp -r ${base}/processing/${obsnum}/${obsnum}.ms /nvmetmp
-cp ${base}/processing/${obsnum}/${obsnum}.metafits /nvmetmp
 
 ## determine number of time-steps
 cd /nvmetmp
@@ -36,7 +40,7 @@ source tmp.txt
 echo "timeSteps found" ${TIMESTEPS} " and integration time " ${INTTIME}
 updatedTIMESTEPS=$(($TIMESTEPS-1)) ## cos indexes start from zero
 channels=768 ## hard coded 
-updatedCHANNELS=$(($channels-1))
+updatedCHANNELS=$(($channels-1)) ## cos indexes start from zero
 
 cp /home/sprabu/RFISeeker/RFISeeker /nvmetmp
 
@@ -91,6 +95,9 @@ do
         b=0
         for job in `jobs -p`
         do
+            if [ ${job} -eq ${monitorPID} ]; then
+                continue
+            fi
             pids[${b}]=${job}
             b=$((b+1))
         done
@@ -113,12 +120,12 @@ do
     startt=`date +%s`
     ## run RFISeeker in parallel (for positive and negative source extraction)
     python_rfi ./RFISeeker --obs ${obsnum} --freqChannels ${channels} --seedSigma 6\
-                --floodfillSigma 3 --timeStep $((g-1)) --prefix 6Sigma3Floodfill\
+                --floodfillSigma 1 --timeStep $((g-1)) --prefix 6Sigma1Floodfill\
                 --imgSize 1400 --streak head --ext image &
     PID1=$!
 
     python_rfi ./RFISeeker --obs ${obsnum} --freqChannels ${channels} --seedSigma 6\
-                --floodfillSigma 3 --timeStep $((g-1)) --prefix 6Sigma3Floodfill\
+                --floodfillSigma 1 --timeStep $((g-1)) --prefix 6Sigma1Floodfill\
                 --imgSize 1400 --streak Tail --ext image &
     PID2=$!
 
@@ -136,8 +143,15 @@ do
 
 done
 
+## generate primary beam and save to disk
+
+## kill monitor
+kill -p ${monitorPID}
+
 ## copy files back to 
 cp *RFI*.fits ${base}/processing/${obsnum}/
+cp *.csv ${base}/processing/${obsnum}/
+cp *.txt ${base}/processing/${obsnum}/
 
 end=`date +%s`
 runtime=$((end-start))
