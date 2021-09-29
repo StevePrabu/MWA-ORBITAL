@@ -16,9 +16,9 @@ job creates fine channel images for every time-step and searches for transient e
 job cross matches the events found by RFISeeeker (in previous step) with satellite tracks within the FOV
 
 
-## Obs_getSatPass.sh
+## Obs_orbitDetermination.sh
 
-job extracts angular pass measuremetns of the satellite
+job extracts angular pass measuremetns of the satellite and performs orbit determination.
 
 
 ## Obs_shiftstack.sh
