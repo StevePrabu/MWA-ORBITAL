@@ -7,9 +7,10 @@
 
 usage()
 {
-echo "obs_shiftstack.sh [-o obsnum] [-n norad] [-d dependancy] 
+echo "obs_shiftstack.sh [-o obsnum] [-n norad] [-s search radius] [-d dependancy] 
     -o obsnum       : the obsid
     -n norad        : the norad id
+    -s search radius: the shift-stack search radius measured from pointing centre (default=18 deg)
     -d dependancy   : dependant job id" 1>&2;
 exit 1;
 }
@@ -18,8 +19,9 @@ exit 1;
 obsnum=
 dep=
 norad=
+searchRadius=18
 
-while getopts 'o:d:n:' OPTION
+while getopts 'o:d:n:s:' OPTION
 do
     case "$OPTION" in
         o)
@@ -30,6 +32,9 @@ do
             ;;
         n)
             norad=${OPTARG}
+            ;;
+        s)
+            searchRadius=${OPTARG}
             ;;
         ? | : | h)
             usage
@@ -64,6 +69,7 @@ script="${MYBASE}/queue/shiftstack_${obsnum}.sh"
 cat ${base}bin/shiftstack.sh | sed -e "s:OBSNUM:${obsnum}:g" \
                                 -e "s:BASE:${MYBASE}:g" \
                                 -e "s:NORAD:${norad}:g" \
+                                -e "s:SEARCHRADIUS:${searchRadius}:g" \
                                 -e "s:MYPATH:${MYPATH}:g"> ${script}
 
 output="${base}queue/logs/shiftstack_${obsnum}.o%A"
