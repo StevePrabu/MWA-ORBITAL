@@ -22,6 +22,7 @@ base=BASE
 myPath=MYPATH
 norad=NORAD
 radius=SEARCHRADIUS
+phaseCorrection=PHASECORRECTION
 
 datadir=${base}/processing/${obsnum}
 
@@ -50,6 +51,15 @@ do
     echo ${tarray[@]}
     chgcentre ${obsnum}.ms ${col2} ${col3}
 
+    ## make near-field correction (if arg true)
+    if [ ${phaseCorrection} = "false" ];
+    then
+      echo "skipping near-field phase correction"
+    else
+      cp /astro/mwasci/sprabu/satellites/git/LEOVision/LEOVision /nvmetmp
+      PyLEO ./LEOVision --ms ${obsnum}.ms --tle ${norad}${obsnum}.txt --headTime ${col5} --debug True --t ${col1}
+    fi
+    
     mkdir Head
     wsclean -name ${obsnum}-2m-${col1}h -size 200 200 -scale 5amin -interval ${ah} ${bh} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Head -quiet -maxuvw-m ${col4} -use-wgridder ${obsnum}.ms &
 

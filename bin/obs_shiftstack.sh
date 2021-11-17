@@ -7,10 +7,11 @@
 
 usage()
 {
-echo "obs_shiftstack.sh [-o obsnum] [-n norad] [-s search radius] [-d dependancy] 
+echo "obs_shiftstack.sh [-o obsnum] [-n norad] [-s search radius] [-p phase correction] [-d dependancy] 
     -o obsnum       : the obsid
     -n norad        : the norad id
     -s search radius: the shift-stack search radius measured from pointing centre (default=18 deg)
+    -p phase corec  : apply near-field phase correction using LEOVision (default=False)
     -d dependancy   : dependant job id" 1>&2;
 exit 1;
 }
@@ -20,8 +21,9 @@ obsnum=
 dep=
 norad=
 searchRadius=18
+phaseCorrection=false
 
-while getopts 'o:d:n:s:' OPTION
+while getopts 'o:d:n:s:p:' OPTION
 do
     case "$OPTION" in
         o)
@@ -35,6 +37,9 @@ do
             ;;
         s)
             searchRadius=${OPTARG}
+            ;;
+        p)
+            phaseCorrection=true
             ;;
         ? | : | h)
             usage
@@ -69,6 +74,7 @@ script="${MYBASE}/queue/shiftstack_${obsnum}.sh"
 cat ${base}bin/shiftstack.sh | sed -e "s:OBSNUM:${obsnum}:g" \
                                 -e "s:BASE:${MYBASE}:g" \
                                 -e "s:NORAD:${norad}:g" \
+                                -e "s:PHASECORRECTION:${phaseCorrection}:g" \
                                 -e "s:SEARCHRADIUS:${searchRadius}:g" \
                                 -e "s:MYPATH:${MYPATH}:g"> ${script}
 
