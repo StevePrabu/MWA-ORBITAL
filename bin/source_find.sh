@@ -1,10 +1,10 @@
 #!/bin/bash -l
 #SBATCH --export=NONE
 #SBATCH -p workq
-#SBATCH --time=8:00:00
-#SBATCH --ntasks=20
-#SBATCH --mem=124GB
-#SBATCH --tmp=440GB
+#SBATCH --time=23:59:59
+#SBATCH --ntasks=36
+#SBATCH --mem=248GB
+#SBATCH --tmp=880GB
 #SBATCH --mail-type FAIL,TIME_LIMIT
 #SBATCH --mail-user sirmcmissile47@gmail.com
 
@@ -66,44 +66,45 @@ do
     then
         echo "wsclean -channels-out ran sucessfully"
     else
-        echo "wsclean -chanels-out failed"
-        echo "re-imaging one fine channel at time (slow!)"
+        exit 0
+        #echo "wsclean -chanels-out failed"
+        #echo "re-imaging one fine channel at time (slow!)"
 
-        ## spawn n number of jobs parallely
-        for f in `seq 0 ${updatedCHANNELS}`;
-        do
-            f1=$((f*1))
-            f2=$((f1+1))
-
-            while [[ $(jobs | wc -l) -ge 20 ]]
-            do
-                wait -n $(jobs -p)
-            done
-
-            ## unique temporary dump folder for every channel and time-step
-            mkdir temp_${g}_${f} 
-            name=`printf %04d $f`
-
-            wsclean -quiet -name ${obsnum}-2m-${i}-${name} -size 1400 1400\
-                        -temp-dir temp_${g}_${f} -abs-mem 5 -interval ${i} ${j}\
-                        -channel-range ${f1} ${f2} -weight natural -scale 5amin\
-                        -use-wgridder -no-dirty ${obsnum}.ms &
-
-        done
-
-        ## wait for all pids before continuing
-        b=0
-        for job in `jobs -p`
-        do
-            if [ ${job} -eq ${monitorPID} ]; then
-                continue
-            fi
-            pids[${b}]=${job}
-            b=$((b+1))
-        done
-        for pid in ${pids[*]}; do
-            wait ${pid}
-        done
+        ### spawn n number of jobs parallely
+        #for f in `seq 0 ${updatedCHANNELS}`;
+        #do
+        #    f1=$((f*1))
+        #    f2=$((f1+1))
+        #
+        #    while [[ $(jobs | wc -l) -ge 20 ]]
+        #    do
+        #        wait -n $(jobs -p)
+        #    done
+        #
+        #    ## unique temporary dump folder for every channel and time-step
+        #    mkdir temp_${g}_${f} 
+        #    name=`printf %04d $f`
+        #
+        #    wsclean -quiet -name ${obsnum}-2m-${i}-${name} -size 1400 1400\
+        #                -temp-dir temp_${g}_${f} -abs-mem 5 -interval ${i} ${j}\
+        #                -channel-range ${f1} ${f2} -weight natural -scale 5amin\
+        #                -use-wgridder -no-dirty ${obsnum}.ms &
+        #
+        #done
+        #
+        ### wait for all pids before continuing
+        #b=0
+        #for job in `jobs -p`
+        #do
+        #    if [ ${job} -eq ${monitorPID} ]; then
+        #        continue
+        #    fi
+        #    pids[${b}]=${job}
+        #    b=$((b+1))
+        #done
+        #for pid in ${pids[*]}; do
+        #    wait ${pid}
+        #done
 
     fi
     
@@ -120,12 +121,12 @@ do
     startt=`date +%s`
     ## run RFISeeker in parallel (for positive and negative source extraction)
     python_rfi ./RFISeeker --obs ${obsnum} --freqChannels ${channels} --seedSigma 6\
-                --floodfillSigma 1 --timeStep $((g-1)) --prefix 6Sigma1Floodfill\
+                --floodfillSigma 3 --timeStep $((g-1)) --prefix 6Sigma1Floodfill\
                 --imgSize 1400 --streak head --ext image &
     PID1=$!
 
     python_rfi ./RFISeeker --obs ${obsnum} --freqChannels ${channels} --seedSigma 6\
-                --floodfillSigma 1 --timeStep $((g-1)) --prefix 6Sigma1Floodfill\
+                --floodfillSigma 3 --timeStep $((g-1)) --prefix 6Sigma1Floodfill\
                 --imgSize 1400 --streak Tail --ext image &
     PID2=$!
 
@@ -140,6 +141,14 @@ do
     rm -r temp_*
     prevIndex=$((${g}-1))
     rm ${obsnum}-2m-${prevIndex}-*.fits
+
+    ## copy files back to 
+    cp *RFI*.fits ${base}/processing/${obsnum}/
+    cp *.csv ${base}/processing/${obsnum}/
+
+    rm *RFI*.fits 
+    rm *.csv 
+
 
 done
 

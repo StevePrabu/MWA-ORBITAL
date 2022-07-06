@@ -31,7 +31,7 @@ monitorPID=$!
 cp ${myPath}/getTimeStepsFromMS.py ${base}/processing/${obsnum}
 PyLEO ./getTimeStepsFromMS.py --ms ${obsnum}.ms
 
-source tmp.txt
+source tmp.txt ##created by getTimeStepsFromMS.py
 
 echo "timeSteps found" ${TIMESTEPS} " and integration time " ${INTTIME}
 updatedTIMESTEPS=$(($TIMESTEPS-1)) ## cos indexes start from zero
@@ -39,7 +39,11 @@ updatedTIMESTEPS=$(($TIMESTEPS-1)) ## cos indexes start from zero
 ## run sat search
 cp ${myPath}/satSearch.py ${base}/processing/${obsnum}
 
-myPython3 ./satSearch.py --t1 0 --t2 ${updatedTIMESTEPS} --user ${spaceTrackUser} --passwd ${spaceTrackPassword} --debug True
+## copy tles over
+rm TLE_catalog*.txt
+cp /astro/mwasci/sprabu/satellites/MWA-ORBITAL/TLE_catalog*.txt ${base}/processing/${obsnum}
+
+myPython3 ./satSearch.py --t1 0 --t2 ${updatedTIMESTEPS} --user ${spaceTrackUser} --passwd ${spaceTrackPassword} --debug True --APImethod2 True
 
 ## kill monitor
 kill -p ${monitorPID}

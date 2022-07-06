@@ -7,9 +7,10 @@
 
 usage()
 {
-echo "obs_orbitDetermination.sh [-o obsnum] [-n norad] [-d dependancy] 
+echo "obs_orbitDetermination.sh [-o obsnum] [-n norad] [-d dependancy] [-s skip ext]
     -o obsnum       : the obsid
     -n norad        : the norad id
+    -s skip ext     : skips running extractAngularMeasurements.py (default False)
     -d dependancy   : dependant job id" 1>&2;
 exit 1;
 }
@@ -18,8 +19,9 @@ exit 1;
 obsnum=
 dep=
 norad=
+skip=false
 
-while getopts 'o:d:n:' OPTION
+while getopts 'o:d:n:s:' OPTION
 do
     case "$OPTION" in
         o)
@@ -30,6 +32,9 @@ do
             ;;
         n)
             norad=${OPTARG}
+            ;;
+        s)
+            skip=true
             ;;
         ? | : | h)
             usage
@@ -64,6 +69,7 @@ script="${MYBASE}/queue/orbitDetermination_${obsnum}.sh"
 cat ${base}bin/orbitDetermination.sh | sed -e "s:OBSNUM:${obsnum}:g" \
                                 -e "s:BASE:${MYBASE}:g" \
                                 -e "s:NORAD:${norad}:g" \
+                                -e "s:SKIP:${skip}:g" \
                                 -e "s:MYPATH:${MYPATH}:g"> ${script}
 
 output="${base}queue/logs/getSatPass_${obsnum}.o%A"

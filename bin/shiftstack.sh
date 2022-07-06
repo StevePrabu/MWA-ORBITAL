@@ -1,10 +1,10 @@
 #!/bin/bash -l
 #SBATCH --export=NONE
 #SBATCH -p workq
-#SBATCH --time=6:00:00
-#SBATCH --ntasks=20
-#SBATCH --mem=124GB
-#SBATCH --tmp=450GB
+#SBATCH --time=20:00:00
+#SBATCH --ntasks=36
+#SBATCH --mem=248GB
+#SBATCH --tmp=880GB
 #SBATCH --mail-type FAIL,TIME_LIMIT
 #SBATCH --mail-user sirmcmissile47@gmail.com
 
@@ -36,7 +36,10 @@ cd /nvmetmp
 
 ## run track.py
 cp ${myPath}/track.py /nvmetmp
-myPython ./track.py --obs ${obsnum} --metafits ${datadir}/${obsnum}.metafits --searchRadius ${radius} --noradid ${norad} --user ${spaceTrackUser} --passwd ${spaceTrackPassword} --debug True
+cp /astro/mwasci/sprabu/satellites/MWA-ORBITAL/tles/${norad}${obsnum}.txt /nvmetmp
+myPython ./track.py --obs ${obsnum} --metafits ${datadir}/${obsnum}.metafits --searchRadius ${radius} --noradid ${norad} \
+  --user ${spaceTrackUser} --passwd ${spaceTrackPassword} --debug True \
+  --integration 0.25
 
 ### make images along phase
 tarray=
@@ -49,7 +52,9 @@ do
     tarray=(${tarray[@]} ${col1})
     echo ${tarray}
     echo ${tarray[@]}
+    echo "time before chgcentre " $(date)
     chgcentre ${obsnum}.ms ${col2} ${col3}
+    echo "time after chgcentre " $(date)
 
     ## make near-field correction (if arg true)
     if [ ${phaseCorrection} = "false" ];
@@ -61,13 +66,15 @@ do
     fi
     
     mkdir Head
-    wsclean -name ${obsnum}-2m-${col1}h -size 200 200 -scale 5amin -interval ${ah} ${bh} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Head -quiet -maxuvw-m ${col4} -use-wgridder ${obsnum}.ms &
-
+    echo "time before wsclean 1 " $(date)
+    wsclean -name ${obsnum}-2m-${col1}h -size 200 200 -scale 2amin -interval ${ah} ${bh} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Head -quiet -maxuvw-m ${col4} -use-wgridder ${obsnum}.ms &
+    echo "time after wsclean 1 " $(date)
     PID1=$!
 
     mkdir Tail
-    wsclean -name ${obsnum}-2m-${col1}t -size 200 200 -scale 5amin -interval ${at} ${bt} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Tail -quiet -maxuvw-m ${col4} -use-wgridder ${obsnum}.ms & 
-
+    echo "time before wsclean 2 " $(date)
+    wsclean -name ${obsnum}-2m-${col1}t -size 200 200 -scale 2amin -interval ${at} ${bt} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Tail -quiet -maxuvw-m ${col4} -use-wgridder ${obsnum}.ms & 
+    echo "time after wsclean 2 " $(date)
     PID2=$!
 
 
