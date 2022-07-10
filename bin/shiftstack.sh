@@ -66,10 +66,12 @@ do
     at=$((bt-1))
     tarray=(${tarray[@]} ${col1})
    
-    echo "time before chgcentre " $(date)
+    start_chg=`date +%s`
     chgcentre ${obsnum}.ms ${col2} ${col3}
-    echo "time after chgcentre " $(date)
-
+    end_chg=`date +%s`
+    runtime=$((end_chg-start_chg))
+    echo "the chgcentre run time ${runtime}"
+    
     ## make near-field phase correction (if arg true)
     if [ ${phaseCorrection} = "false" ];
     then
@@ -77,14 +79,17 @@ do
       maxuvw="-maxuvw-m ${col4}"
     else
       cp /astro/mwasci/sprabu/satellites/git/LEOVision/LEOVision /nvmetmp
-      echo "time before LEOVision " $(date)
+      start_leo=`date +%s`
       PyLEO ./LEOVision --ms ${obsnum}.ms --tle ${norad}${obsnum}.txt --headTime ${col5} --debug True --t ${col1}
       maxuvw=""
-      echo "time after LEOVision " $(date)
+      end_leo=`date +%s`
+      runtime=$((end_leo-start_leo))
+      echo "the LEOVision run time ${runtime}"
+    
     fi
     
     mkdir Head
-    echo "time before wsclean " $(date)
+    start_wsclean=`date +%s`
     wsclean -name ${obsnum}-2m-${col1}h -size 200 200 -scale 2amin -interval ${ah} ${bh} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Head -quiet ${maxuvw} -use-wgridder ${obsnum}.ms &
     PID1=$!
 
@@ -95,7 +100,10 @@ do
     wait ${PID1}    
     wait ${PID2}
 
-    echo "time after wsclean " $(date)
+    end_wsclean=`date +%s`
+    runtime=$((end_wsclean-start_wsclean))
+    echo "the WSClean run time ${runtime}"
+    
 
     rm -r Head
     rm -r Tail
