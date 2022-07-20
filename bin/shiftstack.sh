@@ -1,10 +1,11 @@
 #!/bin/bash -l
 #SBATCH --export=NONE
 #SBATCH -p workq
+#SBATCH --nodes=1
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=36
-#SBATCH --mem=248GB
-#SBATCH --tmp=880GB
+#SBATCH --mem=345GB
+#SBATCH --tmp=864GB
 #SBATCH --mail-type FAIL,TIME_LIMIT
 #SBATCH --mail-user sirmcmissile47@gmail.com
 
@@ -27,7 +28,12 @@ phaseCorrection=PHASECORRECTION
 datadir=${base}/processing/${obsnum}
 
 cd ${datadir}
+rm -r ${norad}
 mkdir ${norad}
+
+## check if ms has read lock
+cp ${myPath}/checkReadLock.py /nvmetmp
+myPython3 ./nvmetmp/checkReadLock.py --file ${datadir}/${obsnum}.ms
 
 ## copy files to nvme disk
 cp -r ${datadir}/${obsnum}.ms /nvmetmp
