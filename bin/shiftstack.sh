@@ -24,6 +24,7 @@ myPath=MYPATH
 norad=NORAD
 radius=SEARCHRADIUS
 phaseCorrection=PHASECORRECTION
+inttime=INTTIME
 
 datadir=${base}/processing/${obsnum}
 
@@ -45,7 +46,7 @@ cp ${myPath}/track.py /nvmetmp
 cp /astro/mwasci/sprabu/satellites/MWA-ORBITAL/tles/${norad}${obsnum}.txt /nvmetmp
 myPython3 ./track.py --obs ${obsnum} --metafits ${datadir}/${obsnum}.metafits --searchRadius ${radius} --noradid ${norad} \
   --user ${spaceTrackUser} --passwd ${spaceTrackPassword} --debug True \
-  --integration 0.25
+  --integration ${inttime}
 
 ## split ms to just the required timesteps. Having a smaller ms drastically reduces the runtime of the job
 cp ${myPath}/splitMS.py /nvmetmp
@@ -60,7 +61,7 @@ mv ${obsnum}split.ms ${obsnum}.ms
 rm ${obsnum}-${norad}.csv
 myPython3 ./track.py --obs ${obsnum} --metafits ${datadir}/${obsnum}.metafits --searchRadius ${radius} --noradid ${norad} \
   --user ${spaceTrackUser} --passwd ${spaceTrackPassword} --debug True \
-  --integration 0.25
+  --integration ${inttime}
 
 ### phase track the predicted trajectory, and make images
 tarray=
