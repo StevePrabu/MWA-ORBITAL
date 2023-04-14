@@ -26,6 +26,9 @@ radius=SEARCHRADIUS
 phaseCorrection=PHASECORRECTION
 inttime=INTTIME
 
+outChannels=768
+
+
 datadir=${base}/processing/${obsnum}
 
 cd ${datadir}
@@ -97,15 +100,17 @@ do
     
     mkdir Head
     start_wsclean=`date +%s`
-    wsclean -name ${obsnum}-2m-${col1}h -size 200 200 -scale 2amin -interval ${ah} ${bh} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Head -quiet ${maxuvw} -use-wgridder ${obsnum}.ms &
+    wsclean -name ${obsnum}-2m-${col1}h -size 200 200 -scale 2amin -interval ${ah} ${bh} -channels-out ${outChannels} -weight natural -abs-mem 40 -temp-dir Head -quiet ${maxuvw} -use-wgridder ${obsnum}.ms &
     PID1=$!
 
     mkdir Tail
-    wsclean -name ${obsnum}-2m-${col1}t -size 200 200 -scale 2amin -interval ${at} ${bt} -channels-out 768 -weight natural -abs-mem 40 -temp-dir Tail -quiet ${maxuvw} -use-wgridder ${obsnum}.ms & 
+    wsclean -name ${obsnum}-2m-${col1}t -size 200 200 -scale 2amin -interval ${at} ${bt} -channels-out ${outChannels} -weight natural -abs-mem 40 -temp-dir Tail -quiet ${maxuvw} -use-wgridder ${obsnum}.ms & 
     PID2=$!
 
     wait ${PID1}    
     wait ${PID2}
+
+    rm *image.fits
 
     end_wsclean=`date +%s`
     runtime=$((end_wsclean-start_wsclean))
@@ -128,13 +133,14 @@ done
 
 ## make stacked image cube
 cp ${myPath}/makeCube.py /nvmetmp
-myPython3 ./makeCube.py --obs ${obsnum} --noradid ${norad} --channels 768 --user ${spaceTrackUser} --passwd ${spaceTrackPassword}
+myPython3 ./makeCube.py --obs ${obsnum} --noradid ${norad} --channels ${outChannels} --user ${spaceTrackUser} --passwd ${spaceTrackPassword}
 
 ### copy data over back to /astro
 cp *.npy ${datadir}/${norad}
 cp *.csv ${datadir}/${norad}
 cp *.png ${datadir}/${norad}
 cp *.txt ${datadir}/${norad}
+#cp *.fits ${datadir}/${norad}
 
 end=`date +%s`
 runtime=$((end-start))

@@ -59,7 +59,7 @@ do
 
     wsclean -quiet -name ${obsnum}-2m-${i} -size 1400 1400\
             -abs-mem 120 -interval ${i} ${j} -channels-out ${channels}\
-            -weight natural -scale 5amin -use-wgridder -no-dirty ${obsnum}.ms
+            -weight natural -scale 5amin -use-wgridder -maxuvw-m 500 -no-dirty ${obsnum}.ms
 
     ## check if failed??
     if [ $? -eq 0 ];
